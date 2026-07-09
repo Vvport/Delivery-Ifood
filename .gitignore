@@ -3,6 +3,7 @@ ifood-route-frontend/node_modules/
 ifood-route-backend/node_modules/
 .next/
 dist/
+tsconfig.tsbuildinfo
 .env
 .env.local
 .DS_Store
@@ -13,3 +14,4 @@ pnpm-lock.yaml
 package-lock.json
 yarn.lock
 .idea/
+test_results.json
