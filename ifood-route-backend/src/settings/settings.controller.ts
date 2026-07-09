@@ -1,5 +1,6 @@
-import { Body, Controller, Get, Put } from '@nestjs/common';
+import { Body, Controller, Get, Put, UsePipes, ValidationPipe } from '@nestjs/common';
 import { SettingsService } from './settings.service';
+import { UpdateSettingsDto } from './dto/update-settings.dto';
 
 @Controller('settings')
 export class SettingsController {
@@ -11,11 +12,12 @@ export class SettingsController {
   }
 
   @Put()
-  async setMany(@Body() body: Record<string, string>) {
-    await this.settingsService.setMany(body);
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+  async setMany(@Body() body: UpdateSettingsDto) {
+    await this.settingsService.setMany(body as Record<string, string>);
 
-    const cep = body['STORE_CEP'];
-    const number = body['STORE_NUMBER'];
+    const cep = body.STORE_CEP;
+    const number = body.STORE_NUMBER;
 
     if (cep && number) {
       const coords = await this.settingsService.geocodeFromCep(cep, number);
