@@ -3,19 +3,14 @@ import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { DeliveryOrder } from '../orders/orders.service';
 import { SettingsService } from '../settings/settings.service';
-
-export interface RoutePoint {
-  label: string;
-  latitude: number;
-  longitude: number;
-  orderId?: string;
-}
-
-export interface OptimizedRoute {
-  stops: RoutePoint[];
-  totalDistanceMeters: number;
-  path: RoutePoint[];
-}
+import {
+  RoutePoint,
+  OptimizedRoute,
+  haversineMatrix,
+  nearestNeighborWithTwoOpt,
+  sumRouteDistance,
+  decodePolyline,
+} from './route-algorithm';
 
 @Injectable()
 export class RouteService {
@@ -45,10 +40,10 @@ export class RouteService {
     }
 
     const matrix = await this.getDistanceMatrix(points);
-    const orderedIndexes = this.nearestNeighborWithTwoOpt(matrix);
+    const orderedIndexes = nearestNeighborWithTwoOpt(matrix);
 
     const stops = orderedIndexes.map((i) => points[i]);
-    const totalDistanceMeters = this.sumRouteDistance(orderedIndexes, matrix);
+    const totalDistanceMeters = sumRouteDistance(orderedIndexes, matrix);
     const path = await this.buildRoutePath(stops);
 
     return { stops, totalDistanceMeters, path };
@@ -68,12 +63,8 @@ export class RouteService {
       return response.data.distances as number[][];
     } catch {
       this.logger.warn('OSRM indisponível, usando distância em linha reta (haversine)');
-      return this.haversineMatrix(points);
+      return haversineMatrix(points);
     }
-  }
-
-  private haversineMatrix(points: RoutePoint[]): number[][] {
-    return points.map((a) => points.map((b) => this.haversineDistance(a, b)));
   }
 
   private async buildRoutePath(stops: RoutePoint[]): Promise<RoutePoint[]> {
@@ -100,145 +91,10 @@ export class RouteService {
         throw new Error('OSRM não retornou geometria');
       }
 
-      return this.decodePolyline(geometry);
+      return decodePolyline(geometry);
     } catch (err) {
       this.logger.warn('Não foi possível obter geometria da rota OSRM, usando caminho direto');
       return stops;
     }
-  }
-
-  private decodePolyline(encoded: string): RoutePoint[] {
-    let index = 0;
-    const points: RoutePoint[] = [];
-    let lat = 0;
-    let lng = 0;
-
-    while (index < encoded.length) {
-      let result = 0;
-      let shift = 0;
-      let byte = 0;
-
-      do {
-        byte = encoded.charCodeAt(index++) - 63;
-        result |= (byte & 0x1f) << shift;
-        shift += 5;
-      } while (byte >= 0x20);
-
-      const deltaLat = (result & 1) !== 0 ? ~(result >> 1) : result >> 1;
-      lat += deltaLat;
-
-      result = 0;
-      shift = 0;
-
-      do {
-        byte = encoded.charCodeAt(index++) - 63;
-        result |= (byte & 0x1f) << shift;
-        shift += 5;
-      } while (byte >= 0x20);
-
-      const deltaLng = (result & 1) !== 0 ? ~(result >> 1) : result >> 1;
-      lng += deltaLng;
-
-      points.push({
-        label: '',
-        latitude: lat / 1e5,
-        longitude: lng / 1e5,
-      });
-    }
-
-    return points;
-  }
-
-  private haversineDistance(a: RoutePoint, b: RoutePoint): number {
-    const R = 6371000;
-    const dLat = this.toRad(b.latitude - a.latitude);
-    const dLng = this.toRad(b.longitude - a.longitude);
-    const lat1 = this.toRad(a.latitude);
-    const lat2 = this.toRad(b.latitude);
-
-    const h =
-      Math.sin(dLat / 2) ** 2 +
-      Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
-
-    return 2 * R * Math.asin(Math.sqrt(h));
-  }
-
-  private toRad(deg: number): number {
-    return (deg * Math.PI) / 180;
-  }
-
-  private nearestNeighbor(matrix: number[][]): number[] {
-    const n = matrix.length;
-    const visited = new Array(n).fill(false);
-    const route = [0];
-    visited[0] = true;
-    let current = 0;
-
-    for (let step = 1; step < n; step++) {
-      let nearest = -1;
-      let nearestDist = Infinity;
-
-      for (let j = 0; j < n; j++) {
-        if (!visited[j] && matrix[current][j] < nearestDist) {
-          nearestDist = matrix[current][j];
-          nearest = j;
-        }
-      }
-
-      route.push(nearest);
-      visited[nearest] = true;
-      current = nearest;
-    }
-
-    return route;
-  }
-
-  private nearestNeighborWithTwoOpt(matrix: number[][]): number[] {
-    return this.twoOpt(this.nearestNeighbor(matrix), matrix);
-  }
-
-  /**
-   * Otimiza a rota local usando a heurística 2-Opt.
-   * Ele desfaz cruzamentos na rota iterativamente invertendo segmentos,
-   * reduzindo a distância total. Executa até não haver melhoria possível.
-   */
-  private twoOpt(route: number[], matrix: number[][]): number[] {
-    const n = route.length;
-    let improved = true;
-
-    while (improved) {
-      improved = false;
-
-      for (let i = 1; i < n - 2; i++) {
-        for (let j = i + 1; j < n - 1; j++) {
-          const a = route[i - 1], b = route[i];
-          const c = route[j], d = route[j + 1];
-
-          if (matrix[a][c] + matrix[b][d] < matrix[a][b] + matrix[c][d]) {
-            // Swap in-place em memória para ganho extremo de performance (evita cópias de array)
-            let left = i;
-            let right = j;
-            while (left < right) {
-              const temp = route[left];
-              route[left] = route[right];
-              route[right] = temp;
-              left++;
-              right--;
-            }
-            improved = true;
-          }
-        }
-      }
-    }
-
-    return route;
-  }
-
-  private sumRouteDistance(route: number[], matrix: number[][]): number {
-    let total = 0;
-    for (let i = 0; i < route.length - 1; i++) {
-      total += matrix[route[i]][route[i + 1]];
-    }
-    return total;
   }
 }
