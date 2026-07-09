@@ -191,7 +191,7 @@ export default function DashboardPage() {
         {/* Mapa */}
         <section className="relative">
           {hasOrders && route ? (
-            <RouteMap stops={route.stops} />
+            <RouteMap stops={route.stops} path={route.path} />
           ) : (
             <div className="h-full flex items-center justify-center bg-surface">
               {!loading && <SearchingOrders />}

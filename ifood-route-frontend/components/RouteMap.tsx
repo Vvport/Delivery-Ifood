@@ -8,6 +8,7 @@ import { RouteStop } from '@/lib/api';
 
 interface RouteMapProps {
   stops: RouteStop[];
+  path?: RouteStop[];
 }
 
 function markerIcon(label: string, isStore: boolean) {
@@ -37,13 +38,14 @@ function MapResizer() {
   return null;
 }
 
-export function RouteMap({ stops }: RouteMapProps) {
+export function RouteMap({ stops, path }: RouteMapProps) {
   if (stops.length === 0) {
     return null;
   }
 
   const center: LatLngExpression = [stops[0].latitude, stops[0].longitude];
-  const path: LatLngExpression[] = stops.map((s) => [s.latitude, s.longitude]);
+  const routePath = path && path.length > 0 ? path : stops;
+  const pathCoordinates: LatLngExpression[] = routePath.map((s) => [s.latitude, s.longitude]);
 
   return (
     <MapContainer
@@ -59,7 +61,7 @@ export function RouteMap({ stops }: RouteMapProps) {
       />
 
       <Polyline
-        positions={path}
+        positions={pathCoordinates}
         pathOptions={{ color: '#F2A93B', weight: 4, opacity: 0.85 }}
       />
 

@@ -34,13 +34,14 @@ let RouteService = RouteService_1 = class RouteService {
             })),
         ];
         if (points.length <= 1) {
-            return { stops: points, totalDistanceMeters: 0 };
+            return { stops: points, totalDistanceMeters: 0, path: points };
         }
         const matrix = await this.getDistanceMatrix(points);
         const orderedIndexes = this.nearestNeighborWithTwoOpt(matrix);
         const stops = orderedIndexes.map((i) => points[i]);
         const totalDistanceMeters = this.sumRouteDistance(orderedIndexes, matrix);
-        return { stops, totalDistanceMeters };
+        const path = await this.buildRoutePath(stops);
+        return { stops, totalDistanceMeters, path };
     }
     async getDistanceMatrix(points) {
         const osrmUrl = (await this.settings.get('OSRM_URL')) ?? 'https://router.project-osrm.org';
@@ -58,6 +59,63 @@ let RouteService = RouteService_1 = class RouteService {
     }
     haversineMatrix(points) {
         return points.map((a) => points.map((b) => this.haversineDistance(a, b)));
+    }
+    async buildRoutePath(stops) {
+        if (stops.length <= 1) {
+            return stops;
+        }
+        const osrmUrl = (await this.settings.get('OSRM_URL')) ?? 'https://router.project-osrm.org';
+        const coords = stops.map((p) => `${p.longitude},${p.latitude}`).join(';');
+        try {
+            const response = await (0, rxjs_1.firstValueFrom)(this.http.get(`${osrmUrl}/route/v1/driving/${coords}`, {
+                params: {
+                    overview: 'full',
+                    geometries: 'polyline',
+                },
+            }));
+            const geometry = response.data.routes?.[0]?.geometry;
+            if (!geometry) {
+                throw new Error('OSRM não retornou geometria');
+            }
+            return this.decodePolyline(geometry);
+        }
+        catch (err) {
+            this.logger.warn('Não foi possível obter geometria da rota OSRM, usando caminho direto');
+            return stops;
+        }
+    }
+    decodePolyline(encoded) {
+        let index = 0;
+        const points = [];
+        let lat = 0;
+        let lng = 0;
+        while (index < encoded.length) {
+            let result = 0;
+            let shift = 0;
+            let byte = 0;
+            do {
+                byte = encoded.charCodeAt(index++) - 63;
+                result |= (byte & 0x1f) << shift;
+                shift += 5;
+            } while (byte >= 0x20);
+            const deltaLat = (result & 1) !== 0 ? ~(result >> 1) : result >> 1;
+            lat += deltaLat;
+            result = 0;
+            shift = 0;
+            do {
+                byte = encoded.charCodeAt(index++) - 63;
+                result |= (byte & 0x1f) << shift;
+                shift += 5;
+            } while (byte >= 0x20);
+            const deltaLng = (result & 1) !== 0 ? ~(result >> 1) : result >> 1;
+            lng += deltaLng;
+            points.push({
+                label: '',
+                latitude: lat / 1e5,
+                longitude: lng / 1e5,
+            });
+        }
+        return points;
     }
     haversineDistance(a, b) {
         const R = 6371000;

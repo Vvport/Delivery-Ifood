@@ -24,6 +24,7 @@ export interface RouteStop {
 export interface OptimizedRoute {
   stops: RouteStop[];
   totalDistanceMeters: number;
+  path: RouteStop[];
 }
 
 /**

@@ -10,6 +10,7 @@ export interface RoutePoint {
 export interface OptimizedRoute {
     stops: RoutePoint[];
     totalDistanceMeters: number;
+    path: RoutePoint[];
 }
 export declare class RouteService {
     private readonly http;
@@ -19,6 +20,8 @@ export declare class RouteService {
     optimize(orders: DeliveryOrder[]): Promise<OptimizedRoute>;
     private getDistanceMatrix;
     private haversineMatrix;
+    private buildRoutePath;
+    private decodePolyline;
     private haversineDistance;
     private toRad;
     private nearestNeighbor;
