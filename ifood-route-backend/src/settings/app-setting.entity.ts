@@ -1,0 +1,13 @@
+import { Entity, Column, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+
+@Entity('app_settings')
+export class AppSetting {
+  @PrimaryColumn()
+  key: string;
+
+  @Column({ type: 'text' })
+  value: string;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+}

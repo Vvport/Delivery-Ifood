@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Paleta: modo claro (padrão) ── */
+:root {
+  --color-base: #F8F9FC;
+  --color-surface: #FFFFFF;
+  --color-border: #E2E7F0;
+  --color-muted: #6B7280;
+  --color-ink: #111827;
+  --color-success: #16A34A;
+}
+
+/* ── Paleta: modo escuro ── */
+.dark {
+  --color-base: #11141C;
+  --color-surface: #1B1F2B;
+  --color-border: #2A2F3F;
+  --color-muted: #8B91A7;
+  --color-ink: #F5F6FA;
+  --color-success: #5FD68B;
+}
+
+html,
+body {
+  background-color: var(--color-base);
+  color: var(--color-ink);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+/* Marcador numerado customizado no mapa (Leaflet) */
+.route-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background-color: #EA1D2C;
+  color: #FFFFFF;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 13px;
+  border: 2px solid var(--color-base);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.route-marker--store {
+  background-color: var(--color-ink);
+}
+
+/* Animação do estado "buscando pedidos" */
+@keyframes radar-pulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.6;
+  }
+  70% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+.radar-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 1px solid #EA1D2C;
+  animation: radar-pulse 2.4s ease-out infinite;
+}
+
+.radar-ring--delay {
+  animation-delay: 1.2s;
+}
