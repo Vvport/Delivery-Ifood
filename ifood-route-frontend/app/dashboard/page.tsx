@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import useSWR from 'swr';
 import { getWaitMinutes, isOrderLate } from '@/lib/utils';
@@ -10,6 +10,7 @@ import {
   OptimizedRoute,
   getPendingOrders,
   getOptimizedRoute,
+  getAppSettings,
   removeOrder,
 } from '@/lib/api';
 import Link from 'next/link';
@@ -29,25 +30,67 @@ const REFRESH_INTERVAL_MS = 30_000;
 
 export default function DashboardPage() {
   const router = useRouter();
+  const [removingOrderId, setRemovingOrderId] = useState<string | null>(null);
 
-  const { data, error: swrError, mutate } = useSWR('dashboardData', async () => {
-    const [pendingOrders, optimizedRoute] = await Promise.all([
-      getPendingOrders(),
-      getOptimizedRoute(),
-    ]);
-    return { orders: pendingOrders, route: optimizedRoute };
-  }, { refreshInterval: REFRESH_INTERVAL_MS });
+  const { data, error: swrError, mutate, isValidating } = useSWR(
+    'dashboardData',
+    async () => {
+      const [pendingOrders, optimizedRoute, appSettings] = await Promise.all([
+        getPendingOrders(),
+        getOptimizedRoute(),
+        getAppSettings(),
+      ]);
+      return { orders: pendingOrders, route: optimizedRoute, settings: appSettings };
+    },
+    { refreshInterval: REFRESH_INTERVAL_MS, revalidateOnFocus: true },
+  );
 
-  const orders = data?.orders ?? [];
-  const route = data?.route ?? null;
+  const orders = useMemo(() => data?.orders ?? [], [data]);
+  const route = useMemo(() => data?.route ?? null, [data]);
+  const settings = useMemo(() => data?.settings ?? null, [data]);
   const loading = !data && !swrError;
-  const error = swrError ? 'Não foi possível conectar ao servidor de pedidos. Verifique se o backend está rodando.' : '';
+  const error = useMemo(
+    () =>
+      swrError
+        ? 'Não foi possível conectar ao servidor de pedidos. Verifique se o backend está rodando.'
+        : '',
+    [swrError],
+  );
 
   const [viewMode, setViewMode] = useState<'route' | 'region'>('route');
   const { lateThresholdMinutes } = useAlertsConfig();
 
+  const now = useMemo(() => Date.now(), []);
+  const lateCount = useMemo(
+    () => orders.filter((o) => isOrderLate(o.createdAt, now, lateThresholdMinutes)).length,
+    [orders, now, lateThresholdMinutes],
+  );
+
+  const hasOrders = orders.length > 0;
+  const distanceKm = useMemo(
+    () => (route ? (route.totalDistanceMeters / 1000).toFixed(1) : '0'),
+    [route],
+  );
+  const ratePerKm = useMemo(
+    () => Number(settings?.MOTOBOY_RATE_PER_KM?.replace(',', '.') ?? '1.5'),
+    [settings],
+  );
+  const routeCost = useMemo(() => {
+    if (!route) return '0,00';
+    const cost = (route.totalDistanceMeters / 1000) * ratePerKm;
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(cost);
+  }, [route, ratePerKm]);
+
+  const handleRefresh = useCallback(() => mutate(), [mutate]);
+
   async function handleRemove(orderId: string) {
     const order = orders.find((o) => o.orderId === orderId);
+    setRemovingOrderId(orderId);
     try {
       await removeOrder(orderId);
       if (order) {
@@ -63,9 +106,11 @@ export default function DashboardPage() {
           waitMinutes: getWaitMinutes(order.createdAt, Date.now()),
         });
       }
-      mutate();
+      await mutate();
     } catch (e) {
       console.error('Erro ao remover pedido', e);
+    } finally {
+      setRemovingOrderId(null);
     }
   }
 
@@ -73,12 +118,6 @@ export default function DashboardPage() {
     await fetch('/api/logout', { method: 'POST' });
     router.push('/login');
   }
-
-  const hasOrders = orders.length > 0;
-  const distanceKm = route ? (route.totalDistanceMeters / 1000).toFixed(1) : '0';
-
-  const now = Date.now();
-  const lateCount = orders.filter((o) => isOrderLate(o.createdAt, now, lateThresholdMinutes)).length;
 
   return (
     <div className="h-screen flex flex-col">
@@ -111,6 +150,8 @@ export default function DashboardPage() {
             <div className="text-right">
               <p className="font-mono text-sm">{distanceKm} km</p>
               <p className="text-xs text-muted">distância total</p>
+              <p className="font-mono text-sm mt-1">{routeCost}</p>
+              <p className="text-xs text-muted">valor estimado</p>
             </div>
           )}
 
@@ -123,6 +164,13 @@ export default function DashboardPage() {
           >
             Configurações
           </Link>
+          <button
+            onClick={handleRefresh}
+            className="text-sm text-muted hover:text-ink transition"
+            disabled={isValidating}
+          >
+            {isValidating ? 'Atualizando...' : 'Atualizar'}
+          </button>
           <button
             onClick={handleLogout}
             className="text-sm text-muted hover:text-ink transition"
@@ -181,6 +229,7 @@ export default function DashboardPage() {
                 onRemove={handleRemove}
                 viewMode={viewMode}
                 lateThresholdMinutes={lateThresholdMinutes}
+                removingOrderId={removingOrderId}
               />
             ) : (
               <SearchingOrders />

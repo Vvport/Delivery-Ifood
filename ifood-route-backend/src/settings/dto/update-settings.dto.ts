@@ -1,4 +1,4 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString, Matches } from 'class-validator';
 
 export class UpdateSettingsDto {
   @IsOptional()
@@ -23,5 +23,13 @@ export class UpdateSettingsDto {
 
   @IsOptional()
   @IsString()
+  STORE_COMPLEMENT?: string;
+
+  @IsOptional()
+  @IsString()
   OSRM_URL?: string;
+
+  @IsOptional()
+  @Matches(/^[0-9]+(?:[.,][0-9]{1,2})?$/)
+  MOTOBOY_RATE_PER_KM?: string;
 }

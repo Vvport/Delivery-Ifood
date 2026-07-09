@@ -27,6 +27,17 @@ export interface OptimizedRoute {
   path: RouteStop[];
 }
 
+export interface AppSettings {
+  IFOOD_CLIENT_ID: string;
+  IFOOD_CLIENT_SECRET: string;
+  IFOOD_MERCHANT_ID: string;
+  STORE_CEP: string;
+  STORE_NUMBER: string;
+  STORE_COMPLEMENT: string;
+  OSRM_URL: string;
+  MOTOBOY_RATE_PER_KM: string;
+}
+
 /**
  * Wrapper padronizado para as chamadas Fetch à API local (/api).
  * Centraliza o tratamento de erros HTTP e faz o parse automático do JSON,
@@ -49,4 +60,16 @@ export async function getOptimizedRoute(): Promise<OptimizedRoute> {
 
 export async function removeOrder(orderId: string): Promise<void> {
   return apiFetch<void>(`/api/orders/${orderId}`, { method: 'DELETE' });
+}
+
+export async function getAppSettings(): Promise<AppSettings> {
+  return apiFetch<AppSettings>('/api/settings', { cache: 'no-store' });
+}
+
+export async function validateSettings(settings: AppSettings): Promise<{ ok: boolean; message: string }> {
+  return apiFetch<{ ok: boolean; message: string }>('/api/settings/validate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(settings),
+  });
 }

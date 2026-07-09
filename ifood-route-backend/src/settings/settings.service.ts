@@ -1,6 +1,8 @@
+import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { firstValueFrom } from 'rxjs';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { AppSetting } from './app-setting.entity';
@@ -11,7 +13,9 @@ export const MANAGED_KEYS = [
   'IFOOD_MERCHANT_ID',
   'STORE_CEP',
   'STORE_NUMBER',
+  'STORE_COMPLEMENT',
   'OSRM_URL',
+  'MOTOBOY_RATE_PER_KM',
 ] as const;
 
 interface ViaCepResponse {
@@ -31,10 +35,13 @@ interface NominatimResult {
 export class SettingsService {
   private readonly logger = new Logger(SettingsService.name);
 
+  private readonly ifoodBaseUrl = 'https://merchant-api.ifood.com.br';
+
   constructor(
     @InjectRepository(AppSetting)
     private readonly repo: Repository<AppSetting>,
     private readonly config: ConfigService,
+    private readonly http: HttpService,
   ) {}
 
   async get(key: string): Promise<string | undefined> {
@@ -65,6 +72,97 @@ export class SettingsService {
   async saveCoordinates(latitude: string, longitude: string): Promise<void> {
     await this.repo.save({ key: 'STORE_LATITUDE', value: latitude });
     await this.repo.save({ key: 'STORE_LONGITUDE', value: longitude });
+  }
+
+  async validateIfoodCredentials(
+    entries: Record<string, string>,
+  ): Promise<{ ok: boolean; message: string; authenticated?: boolean; merchantIdValid?: boolean }> {
+    const clientId = entries.IFOOD_CLIENT_ID ?? '';
+    const clientSecret = entries.IFOOD_CLIENT_SECRET ?? '';
+    const merchantId = entries.IFOOD_MERCHANT_ID ?? '';
+
+    if (!clientId || !clientSecret || !merchantId) {
+      return {
+        ok: false,
+        message: 'Preencha Client ID, Client Secret e Merchant ID para validar.',
+      };
+    }
+
+    const token = await this.requestIfoodToken(clientId, clientSecret);
+    if (!token) {
+      return {
+        ok: false,
+        message: 'Autenticação no iFood falhou. Verifique Client ID e Client Secret.',
+      };
+    }
+
+    const merchantIdValid = await this.verifyMerchantId(token, merchantId);
+    if (!merchantIdValid) {
+      return {
+        ok: false,
+        message: 'Merchant ID inválido ou não autorizado para essas credenciais.',
+      };
+    }
+
+    return {
+      ok: true,
+      authenticated: true,
+      merchantIdValid: true,
+      message: 'Credenciais e Merchant ID validados com sucesso.',
+    };
+  }
+
+  private async requestIfoodToken(
+    clientId: string,
+    clientSecret: string,
+  ): Promise<string | null> {
+    const params = new URLSearchParams({
+      grantType: 'client_credentials',
+      clientId,
+      clientSecret,
+    });
+
+    try {
+      const response = await firstValueFrom(
+        this.http.post<{ accessToken: string; expiresIn: number; type: string }>(
+          `${this.ifoodBaseUrl}/authentication/v1.0/oauth/token`,
+          params.toString(),
+          {
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          },
+        ),
+      );
+
+      return response.data.accessToken;
+    } catch (err: any) {
+      this.logger.warn(
+        'Falha ao requisitar token iFood durante validação de credenciais',
+      );
+      return null;
+    }
+  }
+
+  private async verifyMerchantId(
+    accessToken: string,
+    merchantId: string,
+  ): Promise<boolean> {
+    try {
+      const response = await firstValueFrom(
+        this.http.get(`${this.ifoodBaseUrl}/events/v1.0/events:polling`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'x-polling-merchants': merchantId,
+          },
+        }),
+      );
+
+      return response.status === 200;
+    } catch (err: any) {
+      this.logger.warn(
+        'Falha ao verificar Merchant ID durante validação de credenciais',
+      );
+      return false;
+    }
   }
 
   async geocodeFromCep(

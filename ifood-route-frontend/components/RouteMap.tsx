@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { memo, useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import { DivIcon, LatLngExpression } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -38,14 +38,46 @@ function MapResizer() {
   return null;
 }
 
-export function RouteMap({ stops, path }: RouteMapProps) {
+function RouteMapComponent({ stops, path }: RouteMapProps) {
   if (stops.length === 0) {
     return null;
   }
 
-  const center: LatLngExpression = [stops[0].latitude, stops[0].longitude];
-  const routePath = path && path.length > 0 ? path : stops;
-  const pathCoordinates: LatLngExpression[] = routePath.map((s) => [s.latitude, s.longitude]);
+  const center: LatLngExpression = useMemo(
+    () => [stops[0].latitude, stops[0].longitude],
+    [stops],
+  );
+
+  const routePath = useMemo(
+    () => (path && path.length > 0 ? path : stops),
+    [path, stops],
+  );
+
+  const pathCoordinates: LatLngExpression[] = useMemo(
+    () => routePath.map((s) => [s.latitude, s.longitude]),
+    [routePath],
+  );
+
+  const markers = useMemo(
+    () =>
+      stops.map((stop, index) => {
+        const isStore = index === 0;
+        return (
+          <Marker
+            key={`${stop.label}-${index}`}
+            position={[stop.latitude, stop.longitude]}
+            icon={markerIcon(isStore ? '🏠' : String(index), isStore)}
+          >
+            <Popup>
+              <span className="font-medium">
+                {isStore ? 'Loja (partida)' : `Parada ${index} — ${stop.label}`}
+              </span>
+            </Popup>
+          </Marker>
+        );
+      }),
+    [stops],
+  );
 
   return (
     <MapContainer
@@ -65,22 +97,9 @@ export function RouteMap({ stops, path }: RouteMapProps) {
         pathOptions={{ color: '#F2A93B', weight: 4, opacity: 0.85 }}
       />
 
-      {stops.map((stop, index) => {
-        const isStore = index === 0;
-        return (
-          <Marker
-            key={`${stop.label}-${index}`}
-            position={[stop.latitude, stop.longitude]}
-            icon={markerIcon(isStore ? '🏠' : String(index), isStore)}
-          >
-            <Popup>
-              <span className="font-medium">
-                {isStore ? 'Loja (partida)' : `Parada ${index} — ${stop.label}`}
-              </span>
-            </Popup>
-          </Marker>
-        );
-      })}
+      {markers}
     </MapContainer>
   );
 }
+
+export const RouteMap = memo(RouteMapComponent);

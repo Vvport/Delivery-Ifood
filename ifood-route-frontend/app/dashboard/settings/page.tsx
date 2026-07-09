@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { saveAlertsConfig, DEFAULT_LATE_THRESHOLD } from '@/lib/alerts';
 import { useAlertsConfig } from '@/lib/hooks';
+import { validateSettings } from '@/lib/api';
 
 interface Settings {
   IFOOD_CLIENT_ID: string;
@@ -14,6 +15,7 @@ interface Settings {
   STORE_NUMBER: string;
   STORE_COMPLEMENT: string;
   OSRM_URL: string;
+  MOTOBOY_RATE_PER_KM: string;
 }
 
 interface AddressData {
@@ -30,6 +32,7 @@ const EMPTY: Settings = {
   STORE_NUMBER: '',
   STORE_COMPLEMENT: '',
   OSRM_URL: 'https://router.project-osrm.org',
+  MOTOBOY_RATE_PER_KM: '1.50',
 };
 
 interface SaveResult {
@@ -51,6 +54,9 @@ export default function SettingsPage() {
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [validating, setValidating] = useState(false);
+  const [validationMessage, setValidationMessage] = useState<string | null>(null);
+  const [validationOk, setValidationOk] = useState<boolean | null>(null);
   const [result, setResult] = useState<SaveResult | null>(null);
   const [saveError, setSaveError] = useState('');
   const { lateThresholdMinutes } = useAlertsConfig();
@@ -127,11 +133,11 @@ export default function SettingsPage() {
         } else {
           setAddress({ rua: '', bairro: '', cidade: '' });
           setCepValid(false);
-          showToast('CEP não encontrado. Verifique e tente novamente.');
+          showToast('CEP não encontrado. Confirme o número e tente novamente.');
         }
       } catch {
         setCepValid(false);
-        showToast('Erro ao consultar o CEP. Verifique sua conexão.');
+        showToast('Falha ao consultar o CEP. Verifique sua conexão e tente novamente.');
       } finally {
         setCepLoading(false);
       }
@@ -146,7 +152,7 @@ export default function SettingsPage() {
 
     const cepDigits = form.STORE_CEP.replace(/\D/g, '');
     if (cepDigits.length === 8 && cepValid === false) {
-      showToast('CEP inválido. Corrija o endereço antes de salvar.');
+      showToast('CEP inválido. Ajuste o CEP antes de salvar.');
       return;
     }
 
@@ -164,9 +170,34 @@ export default function SettingsPage() {
       const data: SaveResult = await res.json();
       setResult(data);
     } catch {
-      setSaveError('Erro ao salvar configurações.');
+      setSaveError('Não foi possível salvar as configurações. Tente novamente.');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleValidateCredentials() {
+    setValidating(true);
+    setValidationMessage(null);
+    setValidationOk(null);
+    setSaveError('');
+    setResult(null);
+
+    try {
+      const data = await validateSettings(form);
+      setValidationMessage(data.message);
+      setValidationOk(data.ok);
+      if (!data.ok) {
+        showToast(data.message);
+      } else {
+        showToast('Credenciais validadas com sucesso. Merchant ID está correto.');
+      }
+    } catch (err) {
+      setValidationMessage('Não foi possível validar as credenciais no momento.');
+      setValidationOk(false);
+      showToast('Erro na validação das credenciais. Atualize os dados e tente novamente.');
+    } finally {
+      setValidating(false);
     }
   }
 
@@ -401,13 +432,21 @@ export default function SettingsPage() {
                     onChange={(v) => set('OSRM_URL', v)}
                     placeholder="https://router.project-osrm.org"
                   />
-                  <p className="text-xs text-muted/50 flex items-start gap-1.5 pt-7">
-                    <svg className="w-3.5 h-3.5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    O servidor público serve para testes. Em produção, use uma instância própria.
-                  </p>
+                  <Field
+                    label="Tarifa do motoboy (R$/km)"
+                    type="number"
+                    inputMode="decimal"
+                    value={form.MOTOBOY_RATE_PER_KM}
+                    onChange={(v) => set('MOTOBOY_RATE_PER_KM', v)}
+                    placeholder="1.50"
+                  />
                 </div>
+                <p className="text-xs text-muted/50 flex items-start gap-1.5 pt-7">
+                  <svg className="w-3.5 h-3.5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  O servidor público serve para testes. Em produção, use uma instância própria.
+                </p>
               </SectionCard>
 
               {/* Feedback salvar */}
@@ -419,6 +458,24 @@ export default function SettingsPage() {
                   <p className="text-sm text-accent">{saveError}</p>
                 </div>
               )}
+              {validationMessage && (
+                <div
+                  className={[
+                    'flex items-center gap-2.5 rounded-xl px-4 py-3',
+                    validationOk ? 'bg-success/10 border border-success/20 text-success' : 'bg-accent/10 border border-accent/30 text-accent',
+                  ].join(' ')}
+                  role="alert"
+                >
+                  <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {validationOk ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    )}
+                  </svg>
+                  <p className="text-sm">{validationMessage}</p>
+                </div>
+              )}
               {result?.ok && !saveError && (
                 <div className="flex items-center gap-2.5 rounded-xl bg-success/10 border border-success/20 px-4 py-3">
                   <svg className="w-4 h-4 text-success shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -428,28 +485,37 @@ export default function SettingsPage() {
                 </div>
               )}
 
-              <div className="flex justify-end pt-2">
+              <div className="flex justify-between items-center gap-3 pt-2">
                 <button
-                  type="submit"
-                  disabled={saving || cepHasError}
-                  className="flex items-center gap-2 rounded-xl bg-accent text-ink font-bold px-10 py-3 text-sm transition-all hover:brightness-110 hover:shadow-lg hover:shadow-accent/25 disabled:opacity-50 disabled:cursor-not-allowed"
+                  type="button"
+                  disabled={validating}
+                  onClick={handleValidateCredentials}
+                  className="flex items-center gap-2 rounded-xl bg-surface border border-border text-ink font-semibold px-5 py-3 text-sm transition-all hover:bg-surface/80 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {saving ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-ink/30 border-t-ink rounded-full animate-spin" />
-                      Salvando...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                      </svg>
-                      Salvar configurações
-                    </>
-                  )}
+                  {validating ? 'Validando...' : 'Validar credenciais'}
                 </button>
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={saving || cepHasError}
+                    className="flex items-center gap-2 rounded-xl bg-accent text-ink font-bold px-10 py-3 text-sm transition-all hover:brightness-110 hover:shadow-lg hover:shadow-accent/25 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {saving ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-ink/30 border-t-ink rounded-full animate-spin" />
+                        Salvando...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Salvar configurações
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
-
             </form>
           )}
         </div>

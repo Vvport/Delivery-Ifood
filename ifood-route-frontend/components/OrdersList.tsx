@@ -7,9 +7,10 @@ interface OrdersListProps {
   onRemove: (orderId: string) => void;
   viewMode: 'route' | 'region';
   lateThresholdMinutes: number;
+  removingOrderId?: string | null;
 }
 
-export function OrdersList({ orders, stops, onRemove, viewMode, lateThresholdMinutes }: OrdersListProps) {
+export function OrdersList({ orders, stops, onRemove, viewMode, lateThresholdMinutes, removingOrderId }: OrdersListProps) {
   const now = Date.now();
 
   if (viewMode === 'region') {
@@ -48,6 +49,7 @@ export function OrdersList({ orders, stops, onRemove, viewMode, lateThresholdMin
                   waitMinutes={getWaitMinutes(order.createdAt, now)}
                   late={isOrderLate(order.createdAt, now, lateThresholdMinutes)}
                   onRemove={onRemove}
+                  removing={removingOrderId === order.orderId}
                 />
               ))}
             </div>
@@ -78,6 +80,7 @@ export function OrdersList({ orders, stops, onRemove, viewMode, lateThresholdMin
           waitMinutes={getWaitMinutes(order.createdAt, now)}
           late={isOrderLate(order.createdAt, now, lateThresholdMinutes)}
           onRemove={onRemove}
+          removing={removingOrderId === order.orderId}
         />
       ))}
     </div>
@@ -90,12 +93,14 @@ function OrderCard({
   waitMinutes,
   late,
   onRemove,
+  removing,
 }: {
   order: DeliveryOrder;
   position: number | null;
   waitMinutes: number;
   late: boolean;
   onRemove: (id: string) => void;
+  removing?: boolean;
 }) {
   return (
     <div
@@ -146,9 +151,13 @@ function OrderCard({
           </span>
           <button
             onClick={() => onRemove(order.orderId)}
-            className="text-xs font-medium text-accent hover:underline shrink-0"
+            className={[
+              'text-xs font-medium shrink-0 transition',
+              removing ? 'text-muted cursor-not-allowed' : 'text-accent hover:underline',
+            ].join(' ')}
+            disabled={removing}
           >
-            Marcar como entregue
+            {removing ? 'Removendo...' : 'Marcar como entregue'}
           </button>
         </div>
       </div>

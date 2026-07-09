@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Put, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Get, Post, Put, UsePipes, ValidationPipe } from '@nestjs/common';
 import { SettingsService } from './settings.service';
 import { UpdateSettingsDto } from './dto/update-settings.dto';
 
@@ -9,6 +9,12 @@ export class SettingsController {
   @Get()
   getAll() {
     return this.settingsService.getAll();
+  }
+
+  @Post('validate')
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+  async validate(@Body() body: UpdateSettingsDto) {
+    return this.settingsService.validateIfoodCredentials(body as Record<string, string>);
   }
 
   @Put()
