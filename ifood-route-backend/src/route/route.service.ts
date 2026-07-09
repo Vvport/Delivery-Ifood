@@ -50,8 +50,7 @@ export class RouteService {
   }
 
   private async getDistanceMatrix(points: RoutePoint[]): Promise<number[][]> {
-    const osrmUrl =
-      (await this.settings.get('OSRM_URL')) ?? 'https://router.project-osrm.org';
+    const osrmUrl = (await this.settings.get('OSRM_URL')) ?? 'https://router.project-osrm.org';
     const coords = points.map((p) => `${p.longitude},${p.latitude}`).join(';');
 
     try {
@@ -72,8 +71,7 @@ export class RouteService {
       return stops;
     }
 
-    const osrmUrl =
-      (await this.settings.get('OSRM_URL')) ?? 'https://router.project-osrm.org';
+    const osrmUrl = (await this.settings.get('OSRM_URL')) ?? 'https://router.project-osrm.org';
     const coords = stops.map((p) => `${p.longitude},${p.latitude}`).join(';');
 
     try {

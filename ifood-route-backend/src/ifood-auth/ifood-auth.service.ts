@@ -12,8 +12,7 @@ interface IfoodTokenResponse {
 @Injectable()
 export class IfoodAuthService {
   private readonly logger = new Logger(IfoodAuthService.name);
-  private readonly authUrl =
-    'https://merchant-api.ifood.com.br/authentication/v1.0/oauth/token';
+  private readonly authUrl = 'https://merchant-api.ifood.com.br/authentication/v1.0/oauth/token';
 
   private accessToken: string | null = null;
   private expiresAt = 0;

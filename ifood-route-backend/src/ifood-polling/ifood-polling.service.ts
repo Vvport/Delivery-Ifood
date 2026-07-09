@@ -39,22 +39,19 @@ export class IfoodPollingService {
       this.logger.debug('Polling anterior ainda em andamento. Ignorando este ciclo.');
       return;
     }
-    
+
     this.isPolling = true;
     try {
       const token = await this.auth.getAccessToken();
       const merchantId = (await this.settings.get('IFOOD_MERCHANT_ID')) ?? '';
 
       const response = await firstValueFrom(
-        this.http.get<IfoodEvent[]>(
-          `${this.baseUrl}/events/v1.0/events:polling`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'x-polling-merchants': merchantId,
-            },
+        this.http.get<IfoodEvent[]>(`${this.baseUrl}/events/v1.0/events:polling`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'x-polling-merchants': merchantId,
           },
-        ),
+        }),
       );
 
       const events = response.data ?? [];
@@ -66,7 +63,10 @@ export class IfoodPollingService {
         await this.handleEvent(event);
       }
 
-      await this.acknowledgeEvents(events.map((e) => e.id), token);
+      await this.acknowledgeEvents(
+        events.map((e) => e.id),
+        token,
+      );
     } catch (err: any) {
       this.logger.error('Erro durante o polling de eventos', err?.message ?? err);
     } finally {

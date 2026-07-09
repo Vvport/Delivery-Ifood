@@ -55,10 +55,7 @@ describe('RouteController', () => {
     ordersService.getPendingOrders!.mockResolvedValue([]);
     routeService.optimize!.mockResolvedValue(expectedRoute);
 
-    await request(app.getHttpServer())
-      .get('/route/optimize')
-      .expect(200)
-      .expect(expectedRoute);
+    await request(app.getHttpServer()).get('/route/optimize').expect(200).expect(expectedRoute);
   });
 
   afterAll(async () => {

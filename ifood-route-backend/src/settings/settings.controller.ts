@@ -29,9 +29,19 @@ export class SettingsController {
       const coords = await this.settingsService.geocodeFromCep(cep, number);
       if (coords) {
         await this.settingsService.saveCoordinates(coords.latitude, coords.longitude);
-        return { ok: true, geocoded: true, address: coords.address, latitude: coords.latitude, longitude: coords.longitude };
+        return {
+          ok: true,
+          geocoded: true,
+          address: coords.address,
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+        };
       }
-      return { ok: true, geocoded: false, geocodeWarning: 'CEP ou número não encontrado. Verifique e salve novamente.' };
+      return {
+        ok: true,
+        geocoded: false,
+        geocodeWarning: 'CEP ou número não encontrado. Verifique e salve novamente.',
+      };
     }
 
     return { ok: true };

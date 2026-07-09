@@ -48,9 +48,7 @@ export class OrdersService {
       const deliveryAddress = data?.delivery?.deliveryAddress;
 
       if (!deliveryAddress?.coordinates) {
-        this.logger.warn(
-          `Pedido ${orderId} não possui coordenadas de entrega, ignorando`,
-        );
+        this.logger.warn(`Pedido ${orderId} não possui coordenadas de entrega, ignorando`);
         return;
       }
 
@@ -68,14 +66,9 @@ export class OrdersService {
       });
 
       const total = await this.repo.count();
-      this.logger.log(
-        `Pedido ${data.displayId} salvo no banco (${total} pendentes)`,
-      );
+      this.logger.log(`Pedido ${data.displayId} salvo no banco (${total} pendentes)`);
     } catch (err: any) {
-      this.logger.error(
-        `Erro ao buscar detalhes do pedido ${orderId}`,
-        err?.message ?? err,
-      );
+      this.logger.error(`Erro ao buscar detalhes do pedido ${orderId}`, err?.message ?? err);
     }
   }
 

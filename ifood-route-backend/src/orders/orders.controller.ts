@@ -49,7 +49,7 @@ export class OrdersController {
         addressNeighborhood: 'Consolação',
         addressCity: 'São Paulo',
         latitude: -23.5536,
-        longitude: -46.6580,
+        longitude: -46.658,
       },
       {
         orderId: `SIM-${Date.now()}-2`,
@@ -77,6 +77,9 @@ export class OrdersController {
       await this.repo.save(order);
     }
 
-    return { message: `${fakeOrders.length} pedidos simulados criados com sucesso`, orders: fakeOrders };
+    return {
+      message: `${fakeOrders.length} pedidos simulados criados com sucesso`,
+      orders: fakeOrders,
+    };
   }
 }

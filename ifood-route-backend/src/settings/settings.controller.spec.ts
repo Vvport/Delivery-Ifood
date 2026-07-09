@@ -31,7 +31,10 @@ describe('SettingsController', () => {
       IFOOD_MERCHANT_ID: 'merchant-id',
     };
 
-    settingsService.validateIfoodCredentials!.mockResolvedValue({ ok: true, message: 'Credenciais válidas.' });
+    settingsService.validateIfoodCredentials!.mockResolvedValue({
+      ok: true,
+      message: 'Credenciais válidas.',
+    });
 
     const result = await request(app.getHttpServer())
       .post('/settings/validate')

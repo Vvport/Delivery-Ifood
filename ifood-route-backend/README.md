@@ -1,6 +1,7 @@
 # iFood Route Backend
 
 Backend em NestJS que:
+
 1. Recebe pedidos do iFood via polling de eventos
 2. Extrai o endereço/coordenadas de entrega de cada pedido
 3. Calcula a rota otimizada de entrega a partir da loja
@@ -13,6 +14,7 @@ cp .env.example .env
 ```
 
 Preencha o `.env` com:
+
 - `IFOOD_CLIENT_ID` / `IFOOD_CLIENT_SECRET`: credenciais do app homologado no portal developer.ifood.com.br
 - `IFOOD_MERCHANT_ID`: ID da sua loja na plataforma
 - `STORE_LATITUDE` / `STORE_LONGITUDE`: coordenadas fixas da loja (ponto de partida da rota)

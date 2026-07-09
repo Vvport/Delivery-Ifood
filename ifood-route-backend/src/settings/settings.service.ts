@@ -54,10 +54,7 @@ export class SettingsService {
     const dbMap = Object.fromEntries(rows.map((r) => [r.key, r.value]));
 
     return Object.fromEntries(
-      MANAGED_KEYS.map((key) => [
-        key,
-        dbMap[key] ?? this.config.get<string>(key) ?? '',
-      ]),
+      MANAGED_KEYS.map((key) => [key, dbMap[key] ?? this.config.get<string>(key) ?? '']),
     );
   }
 
@@ -112,10 +109,7 @@ export class SettingsService {
     };
   }
 
-  private async requestIfoodToken(
-    clientId: string,
-    clientSecret: string,
-  ): Promise<string | null> {
+  private async requestIfoodToken(clientId: string, clientSecret: string): Promise<string | null> {
     const params = new URLSearchParams({
       grantType: 'client_credentials',
       clientId,
@@ -135,17 +129,12 @@ export class SettingsService {
 
       return response.data.accessToken;
     } catch (err: any) {
-      this.logger.warn(
-        'Falha ao requisitar token iFood durante validação de credenciais',
-      );
+      this.logger.warn('Falha ao requisitar token iFood durante validação de credenciais');
       return null;
     }
   }
 
-  private async verifyMerchantId(
-    accessToken: string,
-    merchantId: string,
-  ): Promise<boolean> {
+  private async verifyMerchantId(accessToken: string, merchantId: string): Promise<boolean> {
     try {
       const response = await firstValueFrom(
         this.http.get(`${this.ifoodBaseUrl}/events/v1.0/events:polling`, {
@@ -158,9 +147,7 @@ export class SettingsService {
 
       return response.status === 200;
     } catch (err: any) {
-      this.logger.warn(
-        'Falha ao verificar Merchant ID durante validação de credenciais',
-      );
+      this.logger.warn('Falha ao verificar Merchant ID durante validação de credenciais');
       return false;
     }
   }
