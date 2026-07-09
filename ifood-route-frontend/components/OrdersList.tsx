@@ -10,7 +10,14 @@ interface OrdersListProps {
   removingOrderId?: string | null;
 }
 
-export function OrdersList({ orders, stops, onRemove, viewMode, lateThresholdMinutes, removingOrderId }: OrdersListProps) {
+export function OrdersList({
+  orders,
+  stops,
+  onRemove,
+  viewMode,
+  lateThresholdMinutes,
+  removingOrderId,
+}: OrdersListProps) {
   const now = Date.now();
 
   if (viewMode === 'region') {
@@ -36,7 +43,9 @@ export function OrdersList({ orders, stops, onRemove, viewMode, lateThresholdMin
         {Array.from(grouped.entries()).map(([region, items]) => (
           <div key={region}>
             <div className="flex items-center gap-2 mb-2 px-1">
-              <span className="font-mono text-[10px] uppercase tracking-widest text-muted">{region}</span>
+              <span className="font-mono text-[10px] uppercase tracking-widest text-muted">
+                {region}
+              </span>
               <div className="flex-1 h-px bg-border" />
               <span className="text-xs text-muted font-mono">{items.length}</span>
             </div>

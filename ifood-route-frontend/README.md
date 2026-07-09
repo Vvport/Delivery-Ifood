@@ -1,6 +1,7 @@
 # iFood Route Frontend
 
 Painel web (Next.js) com:
+
 - Tela de login (usuário/senha)
 - Dashboard com a lista de pedidos pendentes e o mapa com a rota otimizada
 - Estado "Procurando novos pedidos" quando não há entregas pendentes
@@ -13,6 +14,7 @@ cp .env.example .env
 ```
 
 Preencha o `.env`:
+
 - `NEXT_PUBLIC_API_URL`: URL do backend NestJS (ifood-route-backend), ex: `http://localhost:3000`
 - `APP_USERNAME` / `APP_PASSWORD`: credenciais de acesso ao painel
 

@@ -73,7 +73,12 @@ export default function HistoryPage() {
               className="flex items-center gap-2 text-sm text-muted hover:text-ink transition-colors px-4 py-2 rounded-xl border border-border hover:bg-surface"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
               </svg>
               Voltar ao dashboard
             </Link>
@@ -102,7 +107,11 @@ export default function HistoryPage() {
             <div className="space-y-6">
               {/* Estatísticas */}
               <div className="grid grid-cols-3 gap-4">
-                <StatCard label="Entregas hoje" value={String(todayEntries.length)} unit="pedidos" />
+                <StatCard
+                  label="Entregas hoje"
+                  value={String(todayEntries.length)}
+                  unit="pedidos"
+                />
                 <StatCard label="Tempo médio hoje" value={String(avgWait)} unit="min" />
                 <StatCard label="Total registrado" value={String(history.length)} unit="entregas" />
               </div>
@@ -184,13 +193,7 @@ function HistoryCard({ entry }: { entry: DeliveryHistoryEntry }) {
 
 function IconClock({ size = 20 }: { size?: number }) {
   return (
-    <svg
-      width={size}
-      height={size}
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
+    <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path
         strokeLinecap="round"
         strokeLinejoin="round"

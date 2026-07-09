@@ -29,6 +29,12 @@ export async function PUT(req: NextRequest) {
     const data = text ? JSON.parse(text) : { ok: true };
     return NextResponse.json(data, { status: res.status });
   } catch {
-    return NextResponse.json({ ok: false, error: 'Serviço de configurações indisponível no momento. Tente novamente mais tarde.' }, { status: 503 });
+    return NextResponse.json(
+      {
+        ok: false,
+        error: 'Serviço de configurações indisponível no momento. Tente novamente mais tarde.',
+      },
+      { status: 503 },
+    );
   }
 }

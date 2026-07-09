@@ -17,10 +17,7 @@ export async function POST(request: NextRequest) {
   const validPassword = process.env.APP_PASSWORD;
 
   if (username !== validUsername || password !== validPassword) {
-    return NextResponse.json(
-      { error: 'Usuário ou senha incorretos' },
-      { status: 401 },
-    );
+    return NextResponse.json({ error: 'Usuário ou senha incorretos' }, { status: 401 });
   }
 
   const response = NextResponse.json({ ok: true });

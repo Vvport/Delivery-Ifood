@@ -7,12 +7,10 @@ export function SearchingOrders() {
         <div className="absolute inset-0 m-auto w-3 h-3 rounded-full bg-accent" />
       </div>
 
-      <h2 className="font-display text-lg font-700">
-        Procurando novos pedidos
-      </h2>
+      <h2 className="font-display text-lg font-700">Procurando novos pedidos</h2>
       <p className="mt-2 text-sm text-muted max-w-xs">
-        Nenhum pedido pendente no momento. Assim que um pedido for
-        confirmado no iFood, ele aparece aqui automaticamente.
+        Nenhum pedido pendente no momento. Assim que um pedido for confirmado no iFood, ele aparece
+        aqui automaticamente.
       </p>
     </div>
   );

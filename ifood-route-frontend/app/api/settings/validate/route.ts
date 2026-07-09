@@ -17,6 +17,12 @@ export async function POST(req: NextRequest) {
       : { ok: false, message: 'Resposta inesperada do servidor de validação. Tente novamente.' };
     return NextResponse.json(data, { status: res.status });
   } catch {
-    return NextResponse.json({ ok: false, message: 'Serviço de validação indisponível no momento. Tente novamente mais tarde.' }, { status: 503 });
+    return NextResponse.json(
+      {
+        ok: false,
+        message: 'Serviço de validação indisponível no momento. Tente novamente mais tarde.',
+      },
+      { status: 503 },
+    );
   }
 }

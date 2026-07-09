@@ -21,10 +21,9 @@ import { addToHistory } from '@/lib/history';
 import { DEFAULT_LATE_THRESHOLD } from '@/lib/alerts';
 import { useAlertsConfig } from '@/lib/hooks';
 
-const RouteMap = dynamic(
-  () => import('@/components/RouteMap').then((m) => m.RouteMap),
-  { ssr: false },
-);
+const RouteMap = dynamic(() => import('@/components/RouteMap').then((m) => m.RouteMap), {
+  ssr: false,
+});
 
 const REFRESH_INTERVAL_MS = 30_000;
 
@@ -32,7 +31,12 @@ export default function DashboardPage() {
   const router = useRouter();
   const [removingOrderId, setRemovingOrderId] = useState<string | null>(null);
 
-  const { data, error: swrError, mutate, isValidating } = useSWR(
+  const {
+    data,
+    error: swrError,
+    mutate,
+    isValidating,
+  } = useSWR(
     'dashboardData',
     async () => {
       const [pendingOrders, optimizedRoute, appSettings] = await Promise.all([
@@ -158,10 +162,7 @@ export default function DashboardPage() {
           <Link href="/dashboard/history" className="text-sm text-muted hover:text-ink transition">
             Histórico
           </Link>
-          <Link
-            href="/dashboard/settings"
-            className="text-sm text-muted hover:text-ink transition"
-          >
+          <Link href="/dashboard/settings" className="text-sm text-muted hover:text-ink transition">
             Configurações
           </Link>
           <button
@@ -171,10 +172,7 @@ export default function DashboardPage() {
           >
             {isValidating ? 'Atualizando...' : 'Atualizar'}
           </button>
-          <button
-            onClick={handleLogout}
-            className="text-sm text-muted hover:text-ink transition"
-          >
+          <button onClick={handleLogout} className="text-sm text-muted hover:text-ink transition">
             Sair
           </button>
           <ThemeToggle />

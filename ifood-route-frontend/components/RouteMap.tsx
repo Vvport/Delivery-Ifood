@@ -22,7 +22,7 @@ function markerIcon(label: string, isStore: boolean) {
 
 /**
  * Componente invisível (Subcomponente Leaflet) responsável por forçar
- * o recálculo do grid de tiles do mapa quando o container HTML for 
+ * o recálculo do grid de tiles do mapa quando o container HTML for
  * redimensionado dinamicamente (ex: expansões de janela e menu).
  */
 function MapResizer() {
@@ -43,15 +43,9 @@ function RouteMapComponent({ stops, path }: RouteMapProps) {
     return null;
   }
 
-  const center: LatLngExpression = useMemo(
-    () => [stops[0].latitude, stops[0].longitude],
-    [stops],
-  );
+  const center: LatLngExpression = useMemo(() => [stops[0].latitude, stops[0].longitude], [stops]);
 
-  const routePath = useMemo(
-    () => (path && path.length > 0 ? path : stops),
-    [path, stops],
-  );
+  const routePath = useMemo(() => (path && path.length > 0 ? path : stops), [path, stops]);
 
   const pathCoordinates: LatLngExpression[] = useMemo(
     () => routePath.map((s) => [s.latitude, s.longitude]),
@@ -88,7 +82,7 @@ function RouteMapComponent({ stops, path }: RouteMapProps) {
     >
       <MapResizer />
       <TileLayer
-        attribution='&copy; OpenStreetMap contributors'
+        attribution="&copy; OpenStreetMap contributors"
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 

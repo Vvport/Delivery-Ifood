@@ -66,7 +66,9 @@ export async function getAppSettings(): Promise<AppSettings> {
   return apiFetch<AppSettings>('/api/settings', { cache: 'no-store' });
 }
 
-export async function validateSettings(settings: AppSettings): Promise<{ ok: boolean; message: string }> {
+export async function validateSettings(
+  settings: AppSettings,
+): Promise<{ ok: boolean; message: string }> {
   return apiFetch<{ ok: boolean; message: string }>('/api/settings/validate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
