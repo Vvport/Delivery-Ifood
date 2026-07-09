@@ -1145,6 +1145,9 @@ video {
 .animate-spin {
   animation: spin 1s linear infinite;
 }
+.cursor-not-allowed {
+  cursor: not-allowed;
+}
 .cursor-pointer {
   cursor: pointer;
 }
@@ -1614,29 +1617,31 @@ video {
 
 /* ── Paleta: modo claro (padrão) ── */
 :root {
-  --color-base: #F8F9FC;
-  --color-surface: #FFFFFF;
-  --color-border: #E2E7F0;
-  --color-muted: #6B7280;
+  --color-base: #f8f9fc;
+  --color-surface: #ffffff;
+  --color-border: #e2e7f0;
+  --color-muted: #6b7280;
   --color-ink: #111827;
-  --color-success: #16A34A;
+  --color-success: #16a34a;
 }
 
 /* ── Paleta: modo escuro ── */
 .dark {
-  --color-base: #11141C;
-  --color-surface: #1B1F2B;
-  --color-border: #2A2F3F;
-  --color-muted: #8B91A7;
-  --color-ink: #F5F6FA;
-  --color-success: #5FD68B;
+  --color-base: #11141c;
+  --color-surface: #1b1f2b;
+  --color-border: #2a2f3f;
+  --color-muted: #8b91a7;
+  --color-ink: #f5f6fa;
+  --color-success: #5fd68b;
 }
 
 html,
 body {
   background-color: var(--color-base);
   color: var(--color-ink);
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 /* Marcador numerado customizado no mapa (Leaflet) */
@@ -1647,8 +1652,8 @@ body {
   width: 30px;
   height: 30px;
   border-radius: 999px;
-  background-color: #EA1D2C;
-  color: #FFFFFF;
+  background-color: #ea1d2c;
+  color: #ffffff;
   font-family: var(--font-mono);
   font-weight: 700;
   font-size: 13px;
@@ -1680,7 +1685,7 @@ body {
   position: absolute;
   inset: 0;
   border-radius: 999px;
-  border: 1px solid #EA1D2C;
+  border: 1px solid #ea1d2c;
   animation: radar-pulse 2.4s ease-out infinite;
 }
 
